@@ -1,0 +1,43 @@
+---
+config:
+  general:
+    log_file_prefix: log
+  message_types:
+    test:
+      message_channel:
+        q_mgr_name: QM1
+        q_name: DEV.QUEUE.1
+        channel_name: DEV.APP.SVRCONN
+        listener: DEV.LISTENER.TCP
+        host_name: qmgr
+        host_ip: 127.0.0.1
+        port: 1414
+        user_identifier: app
+        passphrase: gammelsmurfen
+        exception_on_error: true
+        trace_level: 2
+        encoding: ISO-8859-1
+      application:
+        enable_forwarding: no
+        use_client_certificate: no
+        client_certificate: /etc/ssl/certs/the_client_cert.crt
+        address: localhost
+    messagetype2:
+      message_channel:
+        q_mgr_name: QM2
+        q_name: DEV.QUEUE.2
+        channel_name: DEV.APP.SVRCONN
+        listener: DEV.LISTENER.TCP
+        host_name: qmgr
+        host_ip: 127.0.0.1
+        port: 1414
+        user_identifier: app
+        passphrase: thesecretpassword
+        exception_on_error: true
+        trace_level: 2
+        encoding: ISO-8859-1
+      application:
+        enable_forwarding: no
+        use_client_certificate: no
+        client_certificate: /etc/ssl/certs/another_client_cert.crt
+        address: localhost
