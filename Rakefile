@@ -7,6 +7,39 @@ require 'pp'
 desc "The default task is to connect and fetch all messages of the default type test."
 task :default => ["connect_and_fetch"]
 
+desc "Put a message on the queue."
+task :connect_and_put, [:message_type] do |t, args|
+  args.with_defaults(:message_type => "my_message_type", :second_arg => "Bar")
+  message_type = args.message_type
+  config = get_config(message_type)
+
+  WMQ::QueueManager.connect(
+    connection_name: "#{config['message_channel']['host_name']}(#{config['message_channel']['port']})",
+    #q_mgr_name: config['message_channel']['q_mgr_name'],
+    q_name: config['message_channel']['q_name'],
+    channel_name: config['message_channel']['channel_name'],
+    user_identifier: config['message_channel']['user_identifier'],
+    exception_on_error: config['message_channel']['exception_on_error'],
+    trace_level: config['message_channel']['trace_level'],
+  ) do |qmgr|
+    qmgr.open_queue(q_name: "#{config['message_channel']['q_name']}", mode: :output) do |queue|
+      xmlData = "<?xml version=\"1.0\"?>\n" +
+			"<Bibliotekskortsinnehav\n" +
+			"    xmlns:kk=\"http://gukort.icc.it.gu.se\"\n" +
+			"    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+			"    xsi:schemaLocation=\"http://gukort.icc.it.gu.se file:////home/xanjoo/xml/schemas/Bibliotekskortsinnehav-1.1.xsd\">\n" +
+			"  <Personnummer>12121212ABYZ</Personnummer>\n" +
+			"  <Bibliotekskortsnummer>999999999</Bibliotekskortsnummer>\n" +
+			"</Bibliotekskortsinnehav>\n";
+      # First message
+      queue.put(data: xmlData)
+  
+      # Second message
+      #   This message will have new message and correlation id's
+      queue.put(data: xmlData)
+    end
+  end
+end
 
 desc "Set up a connection and fetch messages for the given message_type"
 task :connect_and_fetch, [:message_type] do |t, args|
@@ -69,7 +102,14 @@ task :connect_and_fetch, [:message_type] do |t, args|
         reencoded_data = reencode_data(message.data, 'ISO-8859-1', 'utf-8')
         
         # print to json file or forward json message
-        json_data = convert_to_hash(reencoded_data).to_json
+        hash_data = convert_to_hash(reencoded_data)
+        puts '--hash_data----'
+        pp hash_data
+        puts '------'
+        puts '--json_data----'
+        json_data = hash_data.to_json
+        pp json_data
+        puts '------'
         
         print_file(message_type, "#{fetch_date}_APP", '', json_data, "json")
       else
@@ -117,7 +157,7 @@ def print_file(message_type, some_kind_of_id, message_date, data, file_extension
 end
 
 def get_config(message_type)
-  yaml = YAML.load_file('config.yml')
+  yaml = YAML.load_file('config/config_secret.yml')
   yaml['config']['message_types'][message_type]
 end
 
